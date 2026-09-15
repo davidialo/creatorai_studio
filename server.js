@@ -118,7 +118,7 @@ app.post('/api/render-plan', (req, res) => {
 });
 
 // Send the main website
-app.get('*', (req, res) => {
+app.get('/{*splat}',(req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
