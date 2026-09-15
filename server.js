@@ -10,13 +10,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
 app.use(express.json({ limit: '2mb' }));
 
-// Serve the website from the repository root
+// Serve index.html and other files from the repository root
 app.use(express.static(__dirname));
 
-// OpenAI connection
 const client = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -79,6 +77,8 @@ Do not invent APIs.`;
     });
 
   } catch (error) {
+    console.error(error);
+
     res.status(500).json({
       error: error?.message || 'AI request failed.'
     });
@@ -117,8 +117,8 @@ app.post('/api/render-plan', (req, res) => {
   });
 });
 
-// Send the main website
-app.get('/{*splat}',(req, res) => {
+// Website fallback
+app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
