@@ -1,4 +1,4 @@
-import 'dotenv/config';
+ressssotenv'dotenv/config';
 import express from 'express';
 import OpenAI from 'openai';
 import path from 'path';
