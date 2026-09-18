@@ -9,8 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
-const publicDir = path.join(__dirname, 'public');
-
+const publicDir = __dirname;
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(publicDir));
 
