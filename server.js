@@ -9,63 +9,31 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
-const publicDir = path.join(__dirname, 'public');
-const aiRequestTimeoutMs = Number(process.env.OPENAI_TIMEOUT_MS) || 30000;
+
+const indexFile = path.join(__dirname, 'index.html');
 
 app.use(express.json({ limit: '2mb' }));
-app.use(express.static(publicDir));
+
+// Serve files from the project root
+app.use(express.static(__dirname));
 
 // OpenAI configuration
 const apiKey = process.env.OPENAI_API_KEY;
 const model = process.env.OPENAI_MODEL || 'gpt-5.6-luna';
 
 const client = apiKey
-  ? new OpenAI({ apiKey, timeout: aiRequestTimeoutMs })
+  ? new OpenAI({
+      apiKey,
+      timeout: 30000
+    })
   : null;
-
-const safeErrorResponse = (error, fallbackMessage) => {
-  if (error?.name === 'AbortError' || error?.code === 'ETIMEDOUT' || error?.code === 'ECONNABORTED') {
-    return {
-      status: 504,
-      message: 'The AI request took too long. Please try again.'
-    };
-  }
-
-  if (error instanceof OpenAI.APIError) {
-    if (error.status === 401 || error.status === 403) {
-      return {
-        status: 503,
-        message: 'The AI service is not configured correctly. Please try again later.'
-      };
-    }
-
-    if (error.status === 429) {
-      return {
-        status: 429,
-        message: 'The AI service is busy right now. Please try again shortly.'
-      };
-    }
-
-    if (error.status >= 500) {
-      return {
-        status: 502,
-        message: 'The AI service is temporarily unavailable. Please try again later.'
-      };
-    }
-  }
-
-  return {
-    status: 500,
-    message: fallbackMessage
-  };
-};
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
     aiConfigured: Boolean(client),
-    model: model
+    model
   });
 });
 
@@ -143,7 +111,7 @@ Do not invent APIs or pretend that an unavailable API exists.
     }
 
     const response = await client.responses.create({
-      model: model,
+      model,
       instructions: `
 You are CreatorAI Studio.
 
@@ -167,19 +135,10 @@ Never claim that a video has actually been rendered unless a real video renderer
     });
 
   } catch (error) {
-    console.error('AI ERROR:', {
-      name: error?.name,
-      message: error?.message,
-      code: error?.code,
-      status: error?.status,
-      type: error?.type,
-      requestId: error?.request_id,
-      stack: error?.stack
-    });
+    console.error('AI ERROR:', error);
 
-    const response = safeErrorResponse(error, 'The AI request could not be completed. Please try again.');
-    return res.status(response.status).json({
-      error: response.message
+    return res.status(500).json({
+      error: error?.message || 'AI request failed.'
     });
   }
 });
@@ -207,8 +166,8 @@ app.post('/api/render-plan', (req, res) => {
 
     const manifest = {
       version: 1,
-      title: title,
-      aspect: aspect,
+      title,
+      aspect,
 
       scenes: scenes.map((scene, index) => ({
         id: index + 1,
@@ -221,18 +180,12 @@ app.post('/api/render-plan', (req, res) => {
 
     return res.json({
       ok: true,
-      manifest: manifest,
+      manifest,
       status: 'ready_for_renderer'
     });
 
   } catch (error) {
-    console.error('RENDER PLAN ERROR:', {
-      name: error?.name,
-      message: error?.message,
-      code: error?.code,
-      status: error?.status,
-      stack: error?.stack
-    });
+    console.error('RENDER PLAN ERROR:', error);
 
     return res.status(500).json({
       error: 'Could not create the render plan. Please try again.'
@@ -240,12 +193,9 @@ app.post('/api/render-plan', (req, res) => {
   }
 });
 
-// Website fallback
-// This syntax is compatible with Express 5.
+// Send the root index.html for the website
 app.get('/{*splat}', (req, res) => {
-  res.sendFile(
-    path.join(publicDir, 'index.html')
-  );
+  res.sendFile(indexFile);
 });
 
 // Start server
