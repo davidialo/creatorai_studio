@@ -1,4 +1,1007 @@
-<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>CreatorAI Studio</title><style>
-:root{--bg:#080a10;--p:#121725;--p2:#191f30;--line:#293147;--t:#f7f8ff;--m:#9ca7bd;--a:#795cff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1a1632,#080a10 50%);color:var(--t);font:15px system-ui,Arial}.app{min-height:100vh;display:grid;grid-template-columns:225px 1fr}.side{background:#0b0e16;border-right:1px solid var(--line);padding:22px}.logo{font-size:21px;font-weight:800;margin-bottom:25px}.logo span{color:var(--a)}nav button{display:block;width:100%;padding:12px;margin:5px 0;border:0;border-radius:10px;background:transparent;color:var(--m);text-align:left}nav button.active,nav button:hover{background:var(--p2);color:#fff}.main{max-width:1200px;width:100%;margin:auto;padding:24px}.top{display:flex;justify-content:space-between}.pill{font-size:12px;color:var(--m);border:1px solid var(--line);padding:7px 10px;border-radius:999px}.hero{padding:45px 0 20px}.hero h1{font-size:clamp(38px,7vw,65px);line-height:.98;margin:0 0 15px}.hero p{color:var(--m);max-width:680px}.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}.tabs button,.card{background:var(--p);border:1px solid var(--line);border-radius:16px}.tabs button{padding:15px;text-align:left;color:#fff}.tabs small{display:block;color:var(--m);margin-top:5px}.workspace{display:grid;grid-template-columns:1fr 1fr;gap:15px}.card{padding:18px}.card h2{font-size:17px;margin:0 0 12px}textarea,input{width:100%;background:#0a0d15;color:#fff;border:1px solid var(--line);border-radius:11px;padding:13px}textarea{min-height:190px;resize:vertical}.actions{display:flex;gap:9px;margin-top:11px;flex-wrap:wrap}button{cursor:pointer}.primary,.secondary{padding:11px 15px;border-radius:10px;font-weight:700}.primary{background:var(--a);color:white;border:0}.secondary{background:var(--p2);color:white;border:1px solid var(--line)}.output{white-space:pre-wrap;line-height:1.55;min-height:240px;max-height:550px;overflow:auto;color:#e0e5f2}.status{color:var(--m);font-size:12px;margin-top:9px}.scene{background:#0b0f18;border:1px solid var(--line);border-radius:11px;padding:11px;margin:8px 0}.scene b{color:#21d6b0;font-size:11px}.scene input{margin-top:7px}.scene .row{display:grid;grid-template-columns:80px 1fr;gap:7px}.wide{margin-top:15px}footer{text-align:center;color:var(--m);font-size:12px;padding:25px}@media(max-width:800px){.app{grid-template-columns:1fr}.side{display:none}.main{padding:15px}.workspace{grid-template-columns:1fr}.tabs{grid-template-columns:repeat(2,1fr)}}
-</style></head><body><div class="app"><aside class="side"><div class="logo">Creator<span>AI</span></div><nav><button class="active" onclick="modeSet('creative',this)">✨ AI Creator</button><button onclick="modeSet('video',this)">🎬 AI Video</button><button onclick="modeSet('ad',this)">📢 AI Ads</button><button onclick="modeSet('code',this)">💻 AI Coding</button></nav></aside><main class="main"><div class="top"><b>CreatorAI Studio</b><span id="health" class="pill">Checking…</span></div><section class="hero"><h1>Create. Code. Advertise.</h1><p>Turn one idea into a video plan, advertisement or software project from one workspace.</p></section><div class="tabs"><button onclick="modeSet('video')">🎬 AI Video<small>Scripts & storyboards</small></button><button onclick="modeSet('ad')">📢 AI Ads<small>Complete campaigns</small></button><button onclick="modeSet('code')">💻 AI Coding<small>Web & software</small></button><button onclick="modeSet('creative')">✨ Creative<small>Ideas & content</small></button></div><section class="workspace"><div class="card"><h2 id="title">✨ AI Creator</h2><textarea id="prompt" placeholder="Example: Create a 30-second advert for a Nigerian data business..."></textarea><div class="actions"><button class="primary" onclick="runAI()">Create with AI</button><button class="secondary" onclick="clearAll()">Clear</button></div><div id="status" class="status"></div></div><div class="card"><h2>Output</h2><div id="output" class="output">Your result will appear here.</div><div class="actions"><button class="secondary" onclick="copyOut()">Copy</button><button class="secondary" onclick="saveOut()">Save locally</button></div></div></section><section class="card wide"><h2>🎞️ Video Production Planner</h2><p style="color:var(--m);font-size:13px">Create scene prompts and generate a renderer-ready manifest. This is the foundation for connecting a real MP4 video renderer.</p><div id="scenes"></div><div class="actions"><button class="secondary" onclick="addScene()">+ Add scene</button><button class="primary" onclick="plan()">Build render plan</button></div><div id="plan" class="output" style="min-height:70px;margin-top:10px"></div></section><footer>CreatorAI Studio v1 — API keys stay on the server.</footer></main></div><script>
-let mode='creative',n=0;const titles={creative:'✨ AI Creator',video:'🎬 AI Video',ad:'📢 AI Ads',code:'💻 AI Coding'};function modeSet(m,el){mode=m;title.textContent=titles[m];if(el){document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));el.classList.add('active')}}async function runAI(){let p=prompt.value.trim();if(!p){status.textContent='Enter an instruction first.';return}status.textContent='Creating…';output.textContent='';try{let r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode,prompt:p})}),d=await r.json();if(!r.ok)throw Error(d.error);output.textContent=d.result;status.textContent='Done.'}catch(e){output.textContent=e.message;status.textContent='Request failed.'}}function copyOut(){navigator.clipboard?.writeText(output.textContent)}function saveOut(){localStorage.setItem('creatorai',JSON.stringify({mode,prompt:prompt.value,output:output.textContent}));status.textContent='Saved on this device.'}function clearAll(){prompt.value='';output.textContent='Your result will appear here.';status.textContent=''}function addScene(){n++;let d=document.createElement('div');d.className='scene';d.innerHTML=`<b>SCENE ${n}</b><div class="row"><input class="dur" type="number" min="1" value="4"><input class="sp" placeholder="Describe the scene..."></div><input class="nar" placeholder="Voiceover (optional)"><input class="cap" placeholder="Caption (optional)">`;scenes.appendChild(d)}async function plan(){let ss=[...document.querySelectorAll('.scene')].map(x=>({duration:x.querySelector('.dur').value,prompt:x.querySelector('.sp').value,narration:x.querySelector('.nar').value,caption:x.querySelector('.cap').value}));if(!ss.length)return addScene();let r=await fetch('/api/render-plan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenes:ss})}),d=await r.json();document.getElementById('plan').textContent=JSON.stringify(d.manifest||d,null,2)}fetch('/api/health').then(r=>r.json()).then(d=>health.textContent=d.aiConfigured?'● AI connected':'○ Add API key').catch(()=>health.textContent='Offline');addScene();</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080a10">
+<title>CreatorAI Studio</title>
+
+<style>
+:root{
+  --bg:#080a10;
+  --p:#121725;
+  --p2:#191f30;
+  --line:#293147;
+  --t:#f7f8ff;
+  --m:#9ca7bd;
+  --a:#795cff;
+  --good:#21d6b0;
+  --bad:#ff667a;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#1a1632,#080a10 50%);
+  color:var(--t);
+  font:15px system-ui,Arial,sans-serif;
+}
+
+button,input,textarea{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.app{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:225px 1fr;
+}
+
+.side{
+  background:#0b0e16;
+  border-right:1px solid var(--line);
+  padding:22px;
+}
+
+.logo{
+  font-size:21px;
+  font-weight:800;
+  margin-bottom:25px;
+}
+
+.logo span{
+  color:var(--a);
+}
+
+nav button{
+  display:block;
+  width:100%;
+  padding:12px;
+  margin:5px 0;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:var(--m);
+  text-align:left;
+}
+
+nav button.active,
+nav button:hover{
+  background:var(--p2);
+  color:#fff;
+}
+
+.main{
+  max-width:1200px;
+  width:100%;
+  margin:auto;
+  padding:24px;
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.pill{
+  font-size:12px;
+  color:var(--m);
+  border:1px solid var(--line);
+  padding:7px 10px;
+  border-radius:999px;
+}
+
+.good{
+  color:var(--good)!important;
+}
+
+.bad{
+  color:var(--bad)!important;
+}
+
+.hero{
+  padding:45px 0 20px;
+}
+
+.hero h1{
+  font-size:clamp(38px,7vw,65px);
+  line-height:.98;
+  margin:0 0 15px;
+}
+
+.hero p{
+  color:var(--m);
+  max-width:680px;
+  line-height:1.6;
+}
+
+.tabs{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin:20px 0;
+}
+
+.tabs button,
+.card{
+  background:var(--p);
+  border:1px solid var(--line);
+  border-radius:16px;
+}
+
+.tabs button{
+  padding:15px;
+  text-align:left;
+  color:#fff;
+}
+
+.tabs button.active{
+  border-color:var(--a);
+}
+
+.tabs small{
+  display:block;
+  color:var(--m);
+  margin-top:5px;
+}
+
+.workspace{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+}
+
+.card{
+  padding:18px;
+}
+
+.card h2{
+  font-size:17px;
+  margin:0 0 12px;
+}
+
+textarea,
+input{
+  width:100%;
+  background:#0a0d15;
+  color:#fff;
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:13px;
+  outline:0;
+}
+
+textarea{
+  min-height:190px;
+  resize:vertical;
+}
+
+textarea:focus,
+input:focus{
+  border-color:var(--a);
+}
+
+.actions{
+  display:flex;
+  gap:9px;
+  margin-top:11px;
+  flex-wrap:wrap;
+}
+
+.primary,
+.secondary{
+  padding:11px 15px;
+  border-radius:10px;
+  font-weight:700;
+}
+
+.primary{
+  background:var(--a);
+  color:#fff;
+  border:0;
+}
+
+.secondary{
+  background:var(--p2);
+  color:#fff;
+  border:1px solid var(--line);
+}
+
+button:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+.output{
+  white-space:pre-wrap;
+  line-height:1.55;
+  min-height:240px;
+  max-height:550px;
+  overflow:auto;
+  color:#e0e5f2;
+}
+
+.status{
+  color:var(--m);
+  font-size:12px;
+  margin-top:9px;
+  min-height:18px;
+}
+
+.scene{
+  background:#0b0f18;
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:11px;
+  margin:8px 0;
+}
+
+.scene b{
+  color:var(--good);
+  font-size:11px;
+}
+
+.scene input{
+  margin-top:7px;
+}
+
+.scene .row{
+  display:grid;
+  grid-template-columns:80px 1fr;
+  gap:7px;
+}
+
+.wide{
+  margin-top:15px;
+}
+
+footer{
+  text-align:center;
+  color:var(--m);
+  font-size:12px;
+  padding:25px;
+}
+
+.spinner{
+  display:inline-block;
+  width:12px;
+  height:12px;
+  border:2px solid #555;
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+  vertical-align:-2px;
+  margin-right:6px;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+
+@media(max-width:800px){
+  .app{
+    grid-template-columns:1fr;
+  }
+
+  .side{
+    display:none;
+  }
+
+  .main{
+    padding:15px;
+  }
+
+  .workspace{
+    grid-template-columns:1fr;
+  }
+
+  .tabs{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<aside class="side">
+
+<div class="logo">
+Creator<span>AI</span>
+</div>
+
+<nav>
+
+<button class="active" data-mode="creative">
+✨ AI Creator
+</button>
+
+<button data-mode="video">
+🎬 AI Video
+</button>
+
+<button data-mode="ad">
+📢 AI Ads
+</button>
+
+<button data-mode="code">
+💻 AI Coding
+</button>
+
+</nav>
+
+</aside>
+
+
+<main class="main">
+
+<div class="top">
+
+<b>CreatorAI Studio</b>
+
+<span id="health" class="pill">
+Checking AI…
+</span>
+
+</div>
+
+
+<section class="hero">
+
+<h1>
+Create. Code. Advertise.
+</h1>
+
+<p>
+Turn one idea into a video plan, advertisement or software project from one workspace.
+</p>
+
+</section>
+
+
+<div class="tabs">
+
+<button data-mode="video">
+🎬 AI Video
+<small>Scripts &amp; storyboards</small>
+</button>
+
+<button data-mode="ad">
+📢 AI Ads
+<small>Complete campaigns</small>
+</button>
+
+<button data-mode="code">
+💻 AI Coding
+<small>Web &amp; software</small>
+</button>
+
+<button data-mode="creative">
+✨ Creative
+<small>Ideas &amp; content</small>
+</button>
+
+</div>
+
+
+<section class="workspace">
+
+
+<div class="card">
+
+<h2 id="title">
+✨ AI Creator
+</h2>
+
+<textarea
+id="prompt"
+placeholder="Example: Create a 30-second advert for a Nigerian data business..."
+></textarea>
+
+<div class="actions">
+
+<button id="createBtn" class="primary">
+Create with AI
+</button>
+
+<button id="clearBtn" class="secondary">
+Clear
+</button>
+
+</div>
+
+<div id="status" class="status"></div>
+
+</div>
+
+
+<div class="card">
+
+<h2>
+Output
+</h2>
+
+<div id="output" class="output">
+Your result will appear here.
+</div>
+
+<div class="actions">
+
+<button id="copyBtn" class="secondary">
+Copy
+</button>
+
+<button id="saveBtn" class="secondary">
+Save locally
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+
+<section class="card wide">
+
+<h2>
+🎞️ Video Production Planner
+</h2>
+
+<p style="color:var(--m);font-size:13px">
+Create scene prompts and generate a renderer-ready manifest.
+This is the foundation for connecting a real MP4 video renderer.
+</p>
+
+<div id="scenes"></div>
+
+<div class="actions">
+
+<button id="addSceneBtn" class="secondary">
++ Add scene
+</button>
+
+<button id="planBtn" class="primary">
+Build render plan
+</button>
+
+</div>
+
+<div
+id="plan"
+class="output"
+style="min-height:70px;margin-top:10px"
+></div>
+
+</section>
+
+
+<footer>
+CreatorAI Studio v1 — API keys stay on the server.
+</footer>
+
+</main>
+
+</div>
+
+
+<script>
+
+"use strict";
+
+
+let currentMode="creative";
+let sceneCount=0;
+let aiBusy=false;
+
+
+const titles={
+  creative:"✨ AI Creator",
+  video:"🎬 AI Video",
+  ad:"📢 AI Ads",
+  code:"💻 AI Coding"
+};
+
+
+const $=id=>document.getElementById(id);
+
+
+const health=$("health");
+const title=$("title");
+const promptBox=$("prompt");
+const status=$("status");
+const output=$("output");
+const scenes=$("scenes");
+const planOutput=$("plan");
+
+const createBtn=$("createBtn");
+const clearBtn=$("clearBtn");
+const copyBtn=$("copyBtn");
+const saveBtn=$("saveBtn");
+const addSceneBtn=$("addSceneBtn");
+const planBtn=$("planBtn");
+
+
+function setStatus(text,type=""){
+
+  status.textContent=text;
+
+  status.className="status "+type;
+
+}
+
+
+function setMode(mode){
+
+  if(!titles[mode]) return;
+
+  currentMode=mode;
+
+  title.textContent=titles[mode];
+
+  document
+    .querySelectorAll("[data-mode]")
+    .forEach(
+      b=>b.classList.toggle(
+        "active",
+        b.dataset.mode===mode
+      )
+    );
+
+}
+
+
+document
+  .querySelectorAll("[data-mode]")
+  .forEach(
+    b=>b.addEventListener(
+      "click",
+      ()=>setMode(b.dataset.mode)
+    )
+  );
+
+
+async function runAI(){
+
+  if(aiBusy) return;
+
+  const userPrompt=promptBox.value.trim();
+
+  if(!userPrompt){
+
+    setStatus(
+      "Enter an instruction first.",
+      "bad"
+    );
+
+    promptBox.focus();
+
+    return;
+  }
+
+
+  aiBusy=true;
+
+  createBtn.disabled=true;
+  clearBtn.disabled=true;
+
+  setStatus("Creating…");
+
+
+  output.innerHTML=
+    '<span class="spinner"></span> CreatorAI is working. Please wait…';
+
+
+  try{
+
+    const response=await fetch(
+      "/api/ai",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          mode:currentMode,
+          prompt:userPrompt
+        })
+      }
+    );
+
+
+    const raw=await response.text();
+
+    let data;
+
+    try{
+
+      data=JSON.parse(raw);
+
+    }catch{
+
+      throw new Error(
+        "The server returned an unexpected response."
+      );
+
+    }
+
+
+    if(!response.ok){
+
+      throw new Error(
+        data.error || "AI request failed."
+      );
+
+    }
+
+
+    output.textContent=
+      data.result ||
+      "The AI returned an empty result.";
+
+
+    setStatus(
+      "Done.",
+      "good"
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "CreatorAI error:",
+      error
+    );
+
+    output.textContent=
+      "Error: "+
+      (
+        error.message ||
+        "Something went wrong."
+      );
+
+    setStatus(
+      "Request failed.",
+      "bad"
+    );
+
+  }finally{
+
+    aiBusy=false;
+
+    createBtn.disabled=false;
+    clearBtn.disabled=false;
+
+  }
+
+}
+
+
+createBtn.addEventListener(
+  "click",
+  runAI
+);
+
+
+promptBox.addEventListener(
+  "keydown",
+  e=>{
+
+    if(
+      (e.ctrlKey || e.metaKey) &&
+      e.key==="Enter"
+    ){
+
+      runAI();
+
+    }
+
+  }
+);
+
+
+clearBtn.addEventListener(
+  "click",
+  ()=>{
+
+    promptBox.value="";
+
+    output.textContent=
+      "Your result will appear here.";
+
+    setStatus("");
+
+    promptBox.focus();
+
+  }
+);
+
+
+copyBtn.addEventListener(
+  "click",
+  async()=>{
+
+    try{
+
+      await navigator.clipboard.writeText(
+        output.textContent
+      );
+
+      setStatus(
+        "Output copied.",
+        "good"
+      );
+
+    }catch{
+
+      setStatus(
+        "Copy failed. Select the text manually.",
+        "bad"
+      );
+
+    }
+
+  }
+);
+
+
+saveBtn.addEventListener(
+  "click",
+  ()=>{
+
+    localStorage.setItem(
+      "creatorai_studio",
+      JSON.stringify({
+        mode:currentMode,
+        prompt:promptBox.value,
+        output:output.textContent,
+        savedAt:new Date().toISOString()
+      })
+    );
+
+    setStatus(
+      "Saved on this device.",
+      "good"
+    );
+
+  }
+);
+
+
+function addScene(){
+
+  sceneCount++;
+
+  const scene=
+    document.createElement("div");
+
+  scene.className="scene";
+
+  scene.innerHTML=`
+
+    <b>SCENE ${sceneCount}</b>
+
+    <div class="row">
+
+      <input
+        class="dur"
+        type="number"
+        min="1"
+        value="4"
+      >
+
+      <input
+        class="sp"
+        placeholder="Describe the scene..."
+      >
+
+    </div>
+
+    <input
+      class="nar"
+      placeholder="Voiceover (optional)"
+    >
+
+    <input
+      class="cap"
+      placeholder="Caption (optional)"
+    >
+
+  `;
+
+  scenes.appendChild(scene);
+
+}
+
+
+addSceneBtn.addEventListener(
+  "click",
+  addScene
+);
+
+
+planBtn.addEventListener(
+  "click",
+  async()=>{
+
+    const sceneEls=[
+      ...document.querySelectorAll(".scene")
+    ];
+
+
+    if(!sceneEls.length){
+
+      addScene();
+
+      return;
+
+    }
+
+
+    planBtn.disabled=true;
+
+    planOutput.textContent=
+      "Building render plan…";
+
+
+    const sceneData=
+      sceneEls.map(
+        s=>({
+
+          duration:
+            Number(
+              s.querySelector(".dur").value
+            ) || 4,
+
+          prompt:
+            s.querySelector(".sp").value.trim(),
+
+          narration:
+            s.querySelector(".nar").value.trim(),
+
+          caption:
+            s.querySelector(".cap").value.trim()
+
+        })
+      );
+
+
+    try{
+
+      const response=await fetch(
+        "/api/render-plan",
+        {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json"
+          },
+          body:JSON.stringify({
+            title:"CreatorAI Video",
+            aspect:"9:16",
+            scenes:sceneData
+          })
+        }
+      );
+
+
+      const raw=await response.text();
+
+      let data;
+
+      try{
+
+        data=JSON.parse(raw);
+
+      }catch{
+
+        throw new Error(
+          "The server returned an unexpected response."
+        );
+
+      }
+
+
+      if(!response.ok){
+
+        throw new Error(
+          data.error ||
+          "Could not create render plan."
+        );
+
+      }
+
+
+      planOutput.textContent=
+        JSON.stringify(
+          data.manifest || data,
+          null,
+          2
+        );
+
+
+    }catch(error){
+
+      planOutput.textContent=
+        "Error: "+
+        (
+          error.message ||
+          "Could not build render plan."
+        );
+
+    }finally{
+
+      planBtn.disabled=false;
+
+    }
+
+  }
+);
+
+
+async function checkHealth(){
+
+  try{
+
+    const response=
+      await fetch(
+        "/api/health",
+        {
+          cache:"no-store"
+        }
+      );
+
+
+    const data=
+      await response.json();
+
+
+    if(data.aiConfigured){
+
+      health.textContent=
+        "● AI connected";
+
+      health.className=
+        "pill good";
+
+    }else{
+
+      health.textContent=
+        "○ AI not connected";
+
+      health.className=
+        "pill bad";
+
+    }
+
+  }catch{
+
+    health.textContent=
+      "○ Offline";
+
+    health.className=
+      "pill bad";
+
+  }
+
+}
+
+
+setMode("creative");
+
+addScene();
+
+checkHealth();
+
+</script>
+
+</body>
+</html>
