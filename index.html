@@ -1018,10 +1018,7 @@ async function checkHealth(){
       await response.json();
 
 
-    if(
-      data.aiConfigured &&
-      data.runwayConfigured
-    ){
+    if (data.runwayConfigured) {
 
       health.textContent=
         "● AI + Video connected";
